@@ -1,0 +1,5 @@
+{
+  "name": "Sassy AI Assistant",
+  "description": "A witty, sassy, and flirty voice-to-voice AI assistant powered by Gemini Live.",
+  "requestFramePermissions": ["microphone"]
+}
