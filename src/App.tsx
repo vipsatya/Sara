@@ -9,6 +9,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isPowerOn, setIsPowerOn] = useState(false);
   const [sentMessage, setSentMessage] = useState<{to: string, text: string} | null>(null);
+  const [emotion, setEmotion] = useState<string>("neutral");
   
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
   const liveSessionRef = useRef<LiveSession | null>(null);
@@ -24,6 +25,10 @@ export default function App() {
       setSentMessage({ to: args.recipient, text: args.message });
       setTimeout(() => setSentMessage(null), 5000);
       return { status: "success", message: `Message sent to ${args.recipient}` };
+    }
+    if (name === "setEmotion") {
+      setEmotion(args.emotion);
+      return { status: "success", message: `Emotion set to ${args.emotion}` };
     }
     return { status: "error", message: "Unknown tool" };
   };
@@ -84,11 +89,21 @@ export default function App() {
     };
   }, [stopSession]);
 
+  const getEmotionStyles = () => {
+    switch (emotion) {
+      case "playful": return { text: "text-orange-400", border: "border-orange-400", bg: "bg-orange-400", glow: "rgba(251,146,60,0.5)", shadow: "shadow-[0_0_15px_rgba(251,146,60,0.5)]" };
+      case "sassy": return { text: "text-purple-500", border: "border-purple-500", bg: "bg-purple-500", glow: "rgba(168,85,247,0.5)", shadow: "shadow-[0_0_15px_rgba(168,85,247,0.5)]" };
+      case "excited": return { text: "text-green-400", border: "border-green-400", bg: "bg-green-400", glow: "rgba(74,222,128,0.5)", shadow: "shadow-[0_0_15px_rgba(74,222,128,0.5)]" };
+      case "thinking": return { text: "text-blue-500", border: "border-blue-500", bg: "bg-blue-500", glow: "rgba(59,130,246,0.5)", shadow: "shadow-[0_0_15px_rgba(59,130,246,0.5)]" };
+      default: return { text: "text-pink-500", border: "border-pink-500", bg: "bg-pink-500", glow: "rgba(236,72,153,0.5)", shadow: "shadow-[0_0_15px_rgba(236,72,153,0.5)]" };
+    }
+  };
+
   const getStatusColor = () => {
     switch (state) {
       case "connecting": return "text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]";
       case "listening": return "text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]";
-      case "speaking": return "text-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)]";
+      case "speaking": return `${getEmotionStyles().text} ${getEmotionStyles().shadow}`;
       case "connected": return "text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.5)]";
       default: return "text-gray-500";
     }
@@ -117,8 +132,8 @@ export default function App() {
         animate={{ opacity: 1, y: 0 }}
         className="absolute top-12 flex items-center gap-2"
       >
-        <Sparkles className="w-5 h-5 text-pink-500" />
-        <h1 className="text-sm font-medium tracking-[0.2em] uppercase opacity-60">Sassy Assistant</h1>
+        <Sparkles className={`w-5 h-5 ${state === "speaking" ? getEmotionStyles().text : "text-pink-500"}`} />
+        <h1 className="text-sm font-medium tracking-[0.2em] uppercase opacity-60">Sara</h1>
       </motion.div>
 
       {/* Sent Message Toast */}
@@ -151,11 +166,11 @@ export default function App() {
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ 
-                    scale: state === "speaking" ? [1, 1.1, 1] : 1,
+                    scale: state === "speaking" ? (emotion === "excited" ? [1, 1.2, 1] : [1, 1.1, 1]) : 1,
                     opacity: 1,
-                    borderColor: state === "speaking" ? "rgba(236, 72, 153, 0.4)" : "rgba(34, 211, 238, 0.2)"
+                    borderColor: state === "speaking" ? getEmotionStyles().glow : "rgba(34, 211, 238, 0.2)"
                   }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  transition={{ duration: emotion === "excited" ? 1 : (emotion === "thinking" ? 3 : 2), repeat: Infinity }}
                   className="absolute inset-0 border border-dashed rounded-full"
                 />
                 
@@ -166,7 +181,7 @@ export default function App() {
                     scale: state === "listening" ? [1, 1.05, 1] : 1
                   }}
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className={`absolute inset-4 border-2 border-dotted rounded-full opacity-30 ${state === "speaking" ? "border-pink-500" : "border-cyan-400"}`}
+                  className={`absolute inset-4 border-2 border-dotted rounded-full opacity-30 ${state === "speaking" ? getEmotionStyles().border : "border-cyan-400"}`}
                 />
               </>
             )}
@@ -188,9 +203,9 @@ export default function App() {
                 {state === "speaking" ? (
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
+                    transition={{ duration: emotion === "excited" ? 0.3 : 0.5, repeat: Infinity }}
                   >
-                    <Volume2 className="w-12 h-12 text-pink-500" />
+                    <Volume2 className={`w-12 h-12 ${getEmotionStyles().text}`} />
                   </motion.div>
                 ) : (
                   <Mic className={`w-12 h-12 transition-colors duration-300 ${state === "listening" ? "text-cyan-400" : "text-white/40"}`} />
@@ -205,7 +220,7 @@ export default function App() {
               <motion.div 
                 layoutId="glow"
                 className={`absolute inset-0 rounded-full blur-2xl opacity-20 pointer-events-none ${
-                  state === "speaking" ? "bg-pink-500" : "bg-cyan-400"
+                  state === "speaking" ? getEmotionStyles().bg : "bg-cyan-400"
                 }`}
               />
             )}
@@ -269,7 +284,7 @@ export default function App() {
       >
         Tap the core to initialize neural link. 
         Voice interaction only. 
-        Sass included by default.
+        Sara is listening.
       </motion.div>
     </div>
   );

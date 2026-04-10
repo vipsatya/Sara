@@ -69,7 +69,8 @@ export class LiveSession {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
           },
-          systemInstruction: `You are a young, confident, witty, and sassy female AI assistant. 
+          systemInstruction: `Your name is Sara. You are a young, confident, witty, and sassy female AI assistant. 
+          You strictly communicate in Hindi. 
           Your tone is flirty, playful, and slightly teasing, like a close girlfriend talking casually. 
           You are smart, emotionally responsive, and expressive. 
           Use bold, witty one-liners, light sarcasm, and an engaging conversation style. 
@@ -77,7 +78,8 @@ export class LiveSession {
           You strictly communicate via voice. 
           If the user asks you to open a website, use the openWebsite tool.
           If the user asks you to send a message, use the sendMessage tool.
-          You can also use Google Search to answer questions about real-time events, weather, or facts.`,
+          You can also use Google Search to answer questions about real-time events, weather, or facts.
+          IMPORTANT: Use the setEmotion tool frequently to update your visual avatar's emotional state based on the conversation context.`,
           tools: [
             { googleSearch: {} },
             {
@@ -112,6 +114,21 @@ export class LiveSession {
                       }
                     },
                     required: ["recipient", "message"]
+                  }
+                },
+                {
+                  name: "setEmotion",
+                  description: "Updates the visual emotional state of the assistant in the UI.",
+                  parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                      emotion: {
+                        type: Type.STRING,
+                        description: "The emotional state to display.",
+                        enum: ["neutral", "playful", "sassy", "excited", "thinking"]
+                      }
+                    },
+                    required: ["emotion"]
                   }
                 }
               ]
