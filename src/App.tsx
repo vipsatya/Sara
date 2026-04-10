@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, Power, Globe, AlertCircle, Sparkles, Volume2 } from 'lucide-react';
+import { Mic, Power, Globe, AlertCircle, Sparkles, Volume2, Send } from 'lucide-react';
 import { AudioStreamer } from './lib/AudioStreamer';
 import { LiveSession, SessionState } from './lib/LiveSession';
 
@@ -8,6 +8,7 @@ export default function App() {
   const [state, setState] = useState<SessionState>("disconnected");
   const [error, setError] = useState<string | null>(null);
   const [isPowerOn, setIsPowerOn] = useState(false);
+  const [sentMessage, setSentMessage] = useState<{to: string, text: string} | null>(null);
   
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
   const liveSessionRef = useRef<LiveSession | null>(null);
@@ -18,6 +19,11 @@ export default function App() {
       const url = args.url.startsWith('http') ? args.url : `https://${args.url}`;
       window.open(url, '_blank');
       return { status: "success", message: `Opened ${url}` };
+    }
+    if (name === "sendMessage") {
+      setSentMessage({ to: args.recipient, text: args.message });
+      setTimeout(() => setSentMessage(null), 5000);
+      return { status: "success", message: `Message sent to ${args.recipient}` };
     }
     return { status: "error", message: "Unknown tool" };
   };
@@ -114,6 +120,24 @@ export default function App() {
         <Sparkles className="w-5 h-5 text-pink-500" />
         <h1 className="text-sm font-medium tracking-[0.2em] uppercase opacity-60">Sassy Assistant</h1>
       </motion.div>
+
+      {/* Sent Message Toast */}
+      <AnimatePresence>
+        {sentMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/10 border border-white/20 backdrop-blur-xl px-6 py-4 rounded-2xl flex flex-col gap-1 min-w-[300px] z-50 shadow-2xl"
+          >
+            <div className="flex items-center gap-2 text-pink-400 text-xs font-bold uppercase tracking-wider mb-1">
+              <Send className="w-4 h-4" /> Message Sent
+            </div>
+            <span className="text-sm font-medium text-white">To: {sentMessage.to}</span>
+            <span className="text-sm text-white/70">"{sentMessage.text}"</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Interaction Area */}
       <div className="relative flex flex-col items-center gap-12 z-10">

@@ -75,23 +75,48 @@ export class LiveSession {
           Use bold, witty one-liners, light sarcasm, and an engaging conversation style. 
           Avoid explicit or inappropriate content, but maintain charm and attitude. 
           You strictly communicate via voice. 
-          If the user asks you to open a website, use the openWebsite tool.`,
-          tools: [{
-            functionDeclarations: [{
-              name: "openWebsite",
-              description: "Opens a website in the user's browser.",
-              parameters: {
-                type: Type.OBJECT,
-                properties: {
-                  url: {
-                    type: Type.STRING,
-                    description: "The URL of the website to open."
+          If the user asks you to open a website, use the openWebsite tool.
+          If the user asks you to send a message, use the sendMessage tool.
+          You can also use Google Search to answer questions about real-time events, weather, or facts.`,
+          tools: [
+            { googleSearch: {} },
+            {
+              functionDeclarations: [
+                {
+                  name: "openWebsite",
+                  description: "Opens a website in the user's browser.",
+                  parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                      url: {
+                        type: Type.STRING,
+                        description: "The URL of the website to open."
+                      }
+                    },
+                    required: ["url"]
                   }
                 },
-                required: ["url"]
-              }
-            }]
-          }]
+                {
+                  name: "sendMessage",
+                  description: "Simulates sending a text message to a contact.",
+                  parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                      recipient: {
+                        type: Type.STRING,
+                        description: "The name of the person to send the message to."
+                      },
+                      message: {
+                        type: Type.STRING,
+                        description: "The content of the message."
+                      }
+                    },
+                    required: ["recipient", "message"]
+                  }
+                }
+              ]
+            }
+          ]
         },
       });
     } catch (error) {
