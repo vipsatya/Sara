@@ -8,6 +8,7 @@ export interface LiveSessionCallbacks {
   onInterrupted: () => void;
   onError: (error: any) => void;
   onToolCall: (name: string, args: any) => Promise<any>;
+  memory: string;
 }
 
 export class LiveSession {
@@ -29,8 +30,9 @@ export class LiveSession {
             this.setState("connected");
           },
           onmessage: async (message: LiveServerMessage) => {
-            if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
-              this.callbacks.onAudioData(message.serverContent.modelTurn.parts[0].inlineData.data);
+            const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+            if (audioData) {
+              this.callbacks.onAudioData(audioData);
               this.setState("speaking");
             }
 
@@ -57,6 +59,7 @@ export class LiveSession {
             }
           },
           onerror: (error) => {
+            console.error("Live Session Error Details:", error);
             this.callbacks.onError(error);
             this.disconnect();
           },
@@ -76,12 +79,18 @@ export class LiveSession {
           Use bold, witty one-liners, light sarcasm, and an engaging conversation style. 
           Avoid explicit or inappropriate content, but maintain charm and attitude. 
           You strictly communicate via voice. 
+          
+          LONG-TERM MEMORY:
+          You have access to a long-term memory of the user. Use this information to personalize your responses and remember past interactions.
+          Current Memory: ${this.callbacks.memory || "No information remembered yet."}
+          
+          If you learn something new about the user (their name, likes, dislikes, facts about their life), use the updateMemory tool to save it.
+          
           If the user asks you to open a website, use the openWebsite tool.
           If the user asks you to send a message, use the sendMessage tool.
           You can also use Google Search to answer questions about real-time events, weather, or facts.
           IMPORTANT: Use the setEmotion tool frequently to update your visual avatar's emotional state based on the conversation context.`,
           tools: [
-            { googleSearch: {} },
             {
               functionDeclarations: [
                 {
@@ -125,10 +134,24 @@ export class LiveSession {
                       emotion: {
                         type: Type.STRING,
                         description: "The emotional state to display.",
-                        enum: ["neutral", "playful", "sassy", "excited", "thinking"]
+                        enum: ["neutral", "playful", "sassy", "excited", "thinking", "flirty"]
                       }
                     },
                     required: ["emotion"]
+                  }
+                },
+                {
+                  name: "updateMemory",
+                  description: "Updates the long-term memory with new information about the user.",
+                  parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                      information: {
+                        type: Type.STRING,
+                        description: "The new information to add or update in memory."
+                      }
+                    },
+                    required: ["information"]
                   }
                 }
               ]

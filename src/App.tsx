@@ -1,8 +1,41 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, Power, Globe, AlertCircle, Sparkles, Volume2, Send } from 'lucide-react';
+import { Mic, Power, Globe, AlertCircle, Sparkles, Volume2, Send, Heart } from 'lucide-react';
 import { AudioStreamer } from './lib/AudioStreamer';
 import { LiveSession, SessionState } from './lib/LiveSession';
+
+const FloatingParticles = ({ color, count = 15, icon: Icon = Sparkles }: { color: string, count?: number, icon?: any }) => {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            x: Math.random() * 100 + "%", 
+            y: "110%", 
+            opacity: 0, 
+            scale: Math.random() * 0.5 + 0.5 
+          }}
+          animate={{ 
+            y: "-10%", 
+            opacity: [0, 0.8, 0],
+            x: (Math.random() * 100 - 50) + "%"
+          }}
+          transition={{ 
+            duration: Math.random() * 5 + 5, 
+            repeat: Infinity, 
+            delay: Math.random() * 10,
+            ease: "linear"
+          }}
+          className="absolute"
+          style={{ color }}
+        >
+          <Icon size={Math.random() * 15 + 10} />
+        </motion.div>
+      ))}
+    </div>
+  );
+};
 
 export default function App() {
   const [state, setState] = useState<SessionState>("disconnected");
@@ -10,6 +43,7 @@ export default function App() {
   const [isPowerOn, setIsPowerOn] = useState(false);
   const [sentMessage, setSentMessage] = useState<{to: string, text: string} | null>(null);
   const [emotion, setEmotion] = useState<string>("neutral");
+  const [memory, setMemory] = useState<string>(() => localStorage.getItem('sara_memory') || "");
   
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
   const liveSessionRef = useRef<LiveSession | null>(null);
@@ -29,6 +63,12 @@ export default function App() {
     if (name === "setEmotion") {
       setEmotion(args.emotion);
       return { status: "success", message: `Emotion set to ${args.emotion}` };
+    }
+    if (name === "updateMemory") {
+      const newMemory = memory ? `${memory}\n- ${args.information}` : `- ${args.information}`;
+      setMemory(newMemory);
+      localStorage.setItem('sara_memory', newMemory);
+      return { status: "success", message: "Memory updated" };
     }
     return { status: "error", message: "Unknown tool" };
   };
@@ -52,6 +92,7 @@ export default function App() {
           setError("Something went wrong with the session. Try again?");
         },
         onToolCall: handleToolCall,
+        memory: memory,
       });
 
       audioStreamerRef.current = new AudioStreamer((base64) => {
@@ -91,11 +132,12 @@ export default function App() {
 
   const getEmotionStyles = () => {
     switch (emotion) {
-      case "playful": return { text: "text-orange-400", border: "border-orange-400", bg: "bg-orange-400", glow: "rgba(251,146,60,0.5)", shadow: "shadow-[0_0_15px_rgba(251,146,60,0.5)]" };
-      case "sassy": return { text: "text-purple-500", border: "border-purple-500", bg: "bg-purple-500", glow: "rgba(168,85,247,0.5)", shadow: "shadow-[0_0_15px_rgba(168,85,247,0.5)]" };
-      case "excited": return { text: "text-green-400", border: "border-green-400", bg: "bg-green-400", glow: "rgba(74,222,128,0.5)", shadow: "shadow-[0_0_15px_rgba(74,222,128,0.5)]" };
-      case "thinking": return { text: "text-blue-500", border: "border-blue-500", bg: "bg-blue-500", glow: "rgba(59,130,246,0.5)", shadow: "shadow-[0_0_15px_rgba(59,130,246,0.5)]" };
-      default: return { text: "text-pink-500", border: "border-pink-500", bg: "bg-pink-500", glow: "rgba(236,72,153,0.5)", shadow: "shadow-[0_0_15px_rgba(236,72,153,0.5)]" };
+      case "playful": return { text: "text-orange-400", border: "border-orange-400", bg: "bg-orange-400", glow: "rgba(251,146,60,0.5)", shadow: "shadow-[0_0_15px_rgba(251,146,60,0.5)]", ambient: "from-orange-900/20" };
+      case "sassy": return { text: "text-purple-500", border: "border-purple-500", bg: "bg-purple-500", glow: "rgba(168,85,247,0.5)", shadow: "shadow-[0_0_15px_rgba(168,85,247,0.5)]", ambient: "from-purple-900/20" };
+      case "excited": return { text: "text-green-400", border: "border-green-400", bg: "bg-green-400", glow: "rgba(74,222,128,0.5)", shadow: "shadow-[0_0_15px_rgba(74,222,128,0.5)]", ambient: "from-green-900/20" };
+      case "thinking": return { text: "text-blue-500", border: "border-blue-500", bg: "bg-blue-500", glow: "rgba(59,130,246,0.5)", shadow: "shadow-[0_0_15px_rgba(59,130,246,0.5)]", ambient: "from-blue-900/20" };
+      case "flirty": return { text: "text-red-400", border: "border-red-400", bg: "bg-red-400", glow: "rgba(248,113,113,0.5)", shadow: "shadow-[0_0_15px_rgba(248,113,113,0.5)]", ambient: "from-red-900/20" };
+      default: return { text: "text-pink-500", border: "border-pink-500", bg: "bg-pink-500", glow: "rgba(236,72,153,0.5)", shadow: "shadow-[0_0_15px_rgba(236,72,153,0.5)]", ambient: "from-pink-900/20" };
     }
   };
 
@@ -121,10 +163,20 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-pink-500/30 flex flex-col items-center justify-center p-6 overflow-hidden relative">
+    <div className={`min-h-screen transition-colors duration-1000 bg-[#050505] bg-gradient-to-b ${isPowerOn && state === "speaking" ? getEmotionStyles().ambient : "from-transparent"} to-[#050505] text-white font-sans selection:bg-pink-500/30 flex flex-col items-center justify-center p-6 overflow-hidden relative`}>
       {/* Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-pink-600/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+      {/* Interactive Particles */}
+      <AnimatePresence>
+        {isPowerOn && state === "speaking" && emotion === "flirty" && (
+          <FloatingParticles color="#f87171" icon={Heart} />
+        )}
+        {isPowerOn && state === "speaking" && emotion === "excited" && (
+          <FloatingParticles color="#4ade80" icon={Sparkles} />
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <motion.div 
